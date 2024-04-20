@@ -1,0 +1,40 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+{% if request.GET.command == 'verification' %}
+    <div class="container mx-auto alert alert-info text-center" style="max-width: 1024px; margin-top:100px;">
+        Thank you for registering with us. We have sent you a verification email to your email address [{{request.GET.email}}].
+        <br><br>
+        Already verified? <a href="{% url 'login' %}">Login</a>
+    </div>
+{% else %}
+<div class="container">
+    <div class="card mx-auto" style="max-width: 400px; margin-top: 50px;">
+        <div class="card-body">
+            <h4 class="card-title text-center mb-4">Sign In</h4>
+            {% include 'includes/alerts.html' %}
+            <form action="{% url 'login' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter email" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Password" name="password">
+                </div>
+                <div class="form-group">
+                    <a href="{% url 'forgot_password' %}">Forgot Password?</a>
+                </div>
+                <div class="form-group text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="text-center mt-3">
+    <p>Don't have an account? <a href="{% url 'register' %}">Sign Up</a></p>
+</div>
+{% endif %}
+{% endblock content %}

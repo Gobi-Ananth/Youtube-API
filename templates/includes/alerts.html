@@ -1,0 +1,25 @@
+{% if messages %}
+    {% for message in messages %}
+    <div class="container">
+        <div id="message" {% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %} role="alert">
+            <button type="button" class="btn-close" aria-label="Close" onclick="closeMessage(this)"></button>
+            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Error: {% endif %}
+            {{ message }}
+        </div>
+    </div>    
+    {% endfor %}
+{% endif %}
+<script>
+function closeMessage(button) {
+    var container = button.closest('.container');
+    var message = button.closest('.container').querySelector('.alert');
+    message.remove();
+}
+// Close the alert message after 4 seconds
+setTimeout(function() {
+    var messages = document.querySelectorAll('.alert');
+    messages.forEach(function(message) {
+        message.remove();
+    });
+}, 4000);
+</script>

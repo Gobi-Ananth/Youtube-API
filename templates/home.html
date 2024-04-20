@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'includes/alerts.html' %}
+<div class="mt-4 d-flex justify-content-center">
+    <form class="d-flex" action="{% url 'search_videos' %}" method="GET">
+      <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" style="width: 200px;" name="search">
+      <button class="btn btn-outline-success" type="submit">Search</button>
+    </form>
+</div>
+<div class="mt-1 d-flex justify-content-center">
+    {% if search_history %}
+    <div class="d-flex flex-column">
+        <h5 class="mb-2">Previous Searches</h5>
+    <div class="list-group">
+        <form action="{% url 'search_videos' %}" method="GET">
+            {% for search in search_history %}
+            <div class="d-flex align-items-center justify-content-between">
+                <button type="submit" class="list-group-item list-group-item-action border-0 py-2" name="search" value="{{ search.request_data }}">
+                    {{ search.request_data }}
+                </button>
+                <button type="button" class="btn-close" aria-label="Close" onclick="removeSearch(this)"></button>
+            </div>            
+            {% endfor %}
+        </form>
+    </div>
+    </div>
+{% endif %}
+</div>
+  <div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <ul class="list-unstyled">
+                {% for video in videos %}
+                <li class="mb-4">
+                    <h5 class="mt-2">{{ video.title }}</h5>
+                    <div class="embed-responsive embed-responsive-16by9">
+                        <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/{{ video.video_id }}" allowfullscreen></iframe>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+<script>
+    function removeSearch(button) {
+        var searchItem = button.parentElement;
+        searchItem.remove();
+    }
+</script>
+{% endblock content %}
