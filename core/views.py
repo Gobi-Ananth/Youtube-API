@@ -4,6 +4,8 @@ from googleapiclient.discovery import build
 from django.conf import settings
 from .models import CachedAPIRequest
 from django.contrib.auth.decorators import login_required
+from fuzzywuzzy import fuzz
+
 
 @login_required(login_url='login')
 def home(request):
@@ -36,7 +38,8 @@ def search_videos(request):
             search_response = youtube.search().list(
                 q=search_query,
                 part='snippet',
-                type='video'
+                type='video',
+                maxResults=25, 
             ).execute()
             videos = []
             for search_result in search_response.get('items', []):
@@ -44,6 +47,14 @@ def search_videos(request):
                     'title': search_result['snippet']['title'],
                     'video_id': search_result['id']['videoId']
                 })
+            
+            #fuzzy
+            fuzzy_videos = []
+            for video in videos:
+                ratio = fuzz.ratio(search_query.lower(), video['title'].lower())
+                if ratio > 15:
+                    fuzzy_videos.append(video)
+            
             #Store
             CachedAPIRequest.objects.create(
                 user = request.user,
@@ -51,43 +62,5 @@ def search_videos(request):
                 request_data=search_query,
                 response_data=videos
             )
-        return render(request, 'home.html', {'videos': videos})
-
-def previous_search_videos(request, req):
-    if request.method == 'GET':
-        search_query = req
-        #Check
-        cached_request = CachedAPIRequest.objects.filter(
-            endpoint='youtube_search',
-            request_data=search_query
-        ).first()
-
-        if cached_request:
-            #If Found
-            videos = cached_request.response_data
-        else:
-            #Not Found
-            youtube = build('youtube', 'v3', developerKey=settings.YOUTUBE_API_KEY)
-            search_response = youtube.search().list(
-                q=search_query,
-                part='snippet',
-                type='video'
-            ).execute()
-            videos = []
-            for search_result in search_response.get('items', []):
-                videos.append({
-                    'title': search_result['snippet']['title'],
-                    'video_id': search_result['id']['videoId']
-                })
-            #Store
-            CachedAPIRequest.objects.create(
-                user = request.user,
-                endpoint='youtube_search',
-                request_data=search_query,
-                response_data=videos
-            )
-        return render(request, 'home.html', {'videos': videos})
-
-
-
+        return render(request, 'home.html', {'videos': fuzzy_videos})
 
