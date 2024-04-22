@@ -23,17 +23,28 @@ def home(request):
 def search_videos(request):
     if request.method == 'GET':
         search_query = request.GET.get('search')
-        #Check
+        
+        # Check 
         cached_request = CachedAPIRequest.objects.filter(
             endpoint='youtube_search',
             request_data=search_query
         ).first()
 
         if cached_request:
-            #If Found
+            # If cached
             videos = cached_request.response_data
+            # Check in db
+            similar_queries = CachedAPIRequest.objects.filter(
+                endpoint='youtube_search',
+                request_data__icontains=search_query
+            )
+            # fuzzy search
+            for similar_query in similar_queries:
+                ratio = fuzz.ratio(search_query.lower(), similar_query.request_data.lower())
+                if ratio > 80:
+                    return render(request, 'home.html', {'videos': similar_query.response_data})
         else:
-            #Not Found
+            # If not cached
             youtube = build('youtube', 'v3', developerKey=settings.YOUTUBE_API_KEY)
             search_response = youtube.search().list(
                 q=search_query,
@@ -48,19 +59,17 @@ def search_videos(request):
                     'video_id': search_result['id']['videoId']
                 })
             
-            #fuzzy
             fuzzy_videos = []
-            for video in videos:
-                ratio = fuzz.ratio(search_query.lower(), video['title'].lower())
-                if ratio > 15:
-                    fuzzy_videos.append(video)
+        for video in videos:
+            ratio = fuzz.ratio(search_query.lower(), video['title'].lower())
+            if ratio > 15:
+                fuzzy_videos.append(video)
             
-            #Store
-            CachedAPIRequest.objects.create(
-                user = request.user,
-                endpoint='youtube_search',
-                request_data=search_query,
-                response_data=videos
-            )
-        return render(request, 'home.html', {'videos': fuzzy_videos})
+        CachedAPIRequest.objects.create(
+            user=request.user,
+            endpoint='youtube_search',
+            request_data=search_query,
+            response_data=fuzzy_videos,
+        )
+    return render(request, 'home.html', {'videos': fuzzy_videos})
 
